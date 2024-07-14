@@ -1,0 +1,439 @@
+---
+title: "Assignment-2"
+author: "Kazim shah"
+date: "9/11/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(lubridate)
+library(skimr)
+library(broom)
+library(mgcv)
+library(visreg)
+library(zoo)
+library(data.table)
+library(weathermetrics)
+```
+
+#Importing weather and hospital data and storing them in working folder for further manipulation
+```{r}
+#We can download hospital data from below link
+hospital_data_raw <- read.csv(file = 'http://bit.ly/2nkCUEh')
+#write.csv(hospital_data_raw,'Hospital_data.csv')
+
+hospital_data<-read_csv('govhack3.csv')
+
+#Weather data is pulled from NOAA website, file 2277258.csv is also submitted with assignment
+weather_st_data_raw<-read.csv('2277258.csv')
+
+```
+#Checking number of rows in the weather data and time period
+
+```{r}
+
+print(paste("Total number of rows: ",nrow(weather_st_data_raw)))
+
+
+weather_st_data_date<-transform(weather_st_data_raw,DATE=as.Date (DATE))
+date_data<-arrange(weather_st_data_date,(DATE))
+
+print(paste("The first entry recorded on",first(date_data$DATE)))
+print(paste("The last entry recorded on",last(date_data$DATE)))
+
+```
+
+#Making hospital data tidy
+#Code referenced from assignment 1 as same data set is being used  
+
+```{r}
+#Seperating first row of the data to use further in the code
+
+hospital_list<-'govhack3.csv'
+#hospital_list<-'Hospital_data.csv'
+row_1 <- read_csv(hospital_list, col_names=FALSE, n_max = 1)
+list_of_hospitals<-c(row_1)
+list_of_hospitals<-list_of_hospitals[!is.na(list_of_hospitals)]
+
+#Making 2nd row of the dataset the header
+#hospital_data_v2<-read.csv('Hospital_data.csv',skip=1)
+
+hospital_data_v2<-read.csv('govhack3.csv',skip=1)
+write.csv(hospital_data_v2,'data_modified.csv')
+data_new<-read_csv('data_modified.csv')
+
+#Formating hospital names so that it can be combined in the same format with rest of the data 
+new_hospital_df<-data.frame(list_of_hospitals)
+hospitals<-t(new_hospital_df)
+h_1<-rep(hospitals[1,],365)
+h_2<-rep(hospitals[2,],365)
+h_3<-rep(hospitals[3,],365)
+h_4<-rep(hospitals[4,],365)
+h_5<-rep(hospitals[5,],365)
+h_6<-rep(hospitals[6,],365)
+h_7<-rep(hospitals[7,],365)
+h_8<-rep(hospitals[8,],365)
+h_9<-rep(hospitals[9,],365)
+
+h_combo<-data.frame(h_1,h_2,h_3,h_4,h_5,h_6,h_7,h_8,h_9)
+df2_hospitlas<-data.frame(Hospital=unlist(h_combo,use.names=FALSE))
+
+data_tidy_admission <- hospital_data_v2 %>% 
+  gather(key = "Admissions_new", 
+         value = "Admissions", 
+         starts_with("Admission"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_attendence <- hospital_data_v2 %>% 
+  gather(key = "Attendance_new", 
+         value = "Attendance", 
+         starts_with("Attendance"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_1 <- hospital_data_v2 %>% 
+  gather(key = "Triage_1", 
+         value = "Tri_1_cases", 
+         starts_with("Tri_1"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_2 <- hospital_data_v2 %>% 
+  gather(key = "Triage_2", 
+         value = "Tri_2_cases", 
+         starts_with("Tri_2"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_3 <- hospital_data_v2 %>% 
+  gather(key = "Triage_3", 
+         value = "Tri_3_cases", 
+         starts_with("Tri_3"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_4 <- hospital_data_v2 %>% 
+  gather(key = "Triage_4", 
+         value = "Tri_4_cases", 
+         starts_with("Tri_4"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_5 <- hospital_data_v2 %>% 
+  gather(key = "Triage_5", 
+         value = "Tri_5_cases", 
+         starts_with("Tri_5"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_modi_date<-data_tidy_admission["Date"]
+data_modi_atte<-data_tidy_attendence[c("Attendance")]
+data_modi_admi<-data_tidy_admission[c("Admissions")]
+data_modi_tria_1<-data_tidy_triage_1[c("Tri_1_cases")]
+data_modi_tria_2<-data_tidy_triage_2[c("Tri_2_cases")]
+data_modi_tria_3<-data_tidy_triage_3[c("Tri_3_cases")]
+data_modi_tria_4<-data_tidy_triage_4[c("Tri_4_cases")]
+data_modi_tria_5<-data_tidy_triage_5[c("Tri_5_cases")]
+Hospital_data_tidy=data.frame(data_modi_date,df2_hospitlas,data_modi_atte,data_modi_admi,data_modi_tria_1,data_modi_tria_2,data_modi_tria_3,data_modi_tria_4,data_modi_tria_5)
+#Rearranging Date column for final view
+
+Hospital_data_tidy<-transform(Hospital_data_tidy, Hospital=as.character(Hospital),Admissions=as.numeric(Admissions),Attendance=as.numeric(Attendance),Tri_1_cases=as.numeric(Tri_1_cases),Tri_2_cases=as.numeric(Tri_2_cases),Tri_3_cases=as.numeric(Tri_3_cases),Tri_5_cases=as.numeric(Tri_5_cases))
+
+Hospital_data_tidy[is.na(Hospital_data_tidy)] <- 0
+
+#Selecting Royal perth hospital as it closest to weather station
+Hospital_select<-Hospital_data_tidy %>% filter(Hospital=="Royal Perth Hospital")
+
+Hospital_select<-Hospital_select %>%
+  mutate(Date=seq(from = as.Date("2013-07-01"), to = as.Date("2014-06-30"), by = 'day'))
+
+Hospital_select
+
+```
+
+#Creating linear model for ED demands with date
+
+```{r}
+#Taking ED demand average of all the hospitals in perth area
+skim(Hospital_select)
+
+Hospital_select %>%
+  ggplot(aes(x=Date,y=Attendance))+geom_point()+geom_smooth(method = lm)+ggtitle("Royal perth ED Demand Data")
+  
+```
+
+```{r}
+#Adding week day number which will be used further
+Hospital_select_week<-Hospital_select%>% mutate(weekday=wday(Hospital_select$Date))
+Hospital_select_lm<-transform(Hospital_select_week,Date=as.numeric(Date))
+#Linear regression model with date
+lmfit<-lm(Attendance~Date,data =Hospital_select_lm)
+lmfit%>%summary
+```
+
+```{r}
+lmfit %>%
+  tidy
+```
+
+```{r}
+results <- lmfit %>% 
+  augment
+```
+
+```{r}
+lmfit %>% 
+  glance
+```
+
+```{r}
+results %>% 
+  ggplot(aes(sample = .std.resid)) +
+  geom_qq() + 
+  geom_qq_line(col = 'steelblue')+ggtitle('QQ plot for Standard residuals')
+```
+
+```{r}
+results %>% 
+  ggplot(aes(x = .fitted, y = .resid)) +
+  geom_point() + 
+  geom_quantile() +
+  geom_smooth(colour = 'firebrick')+ggtitle('Fitted vs Residuals')
+```
+
+```{r}
+results %>% 
+  ggplot(aes(x = Attendance, y = .resid)) +
+  geom_point() + 
+  geom_quantile() +
+  geom_smooth(colour = 'firebrick') 
+```
+
+```{r}
+results %>% 
+  ggplot(aes(x = .hat, y = .resid)) +
+  geom_point() + 
+  geom_hline(yintercept = 0,
+             linetype = 'dotted')
+```
+
+```{r}
+results %>% 
+  mutate(big_hat = .hat > 0.03) %>% 
+  ggplot(aes(x = .hat, y = .cooksd)) +
+  geom_point(aes(color = big_hat)) + 
+  geom_hline(yintercept = 0,
+             linetype = 'dotted')
+```
+
+
+#Fitting GAM model
+```{r}
+Hospital_gam <- gam(Attendance ~ s(Date),
+           family=Gamma(link=log),
+           data=Hospital_select_lm)
+summary(Hospital_gam)
+```
+
+```{r}
+plot(Hospital_gam)
+```
+
+```{r}
+
+Hospital_select_lm %>%
+  ggplot(aes(x=Date,y=Attendance))+geom_point()+geom_smooth(method = 'gam',formula=y~s(x))+ggtitle("Royal perth ED Demand Data using GAM")
+
+
+#ggplot(Sample_data, aes(x, y)) + geom_point() + geom_smooth(method = "gam", formula = y ~s(x))
+```
+
+
+```{r}
+plot(Hospital_gam, residuals = TRUE)
+```
+
+```{r}
+#Incorporating weely seasonality 
+#Hospital_select_lm<-transform(Hospital_select,Date=as.Date(Date))
+
+#GAM with date and weekday
+Hospital_gam_1 <- gam(Attendance ~ s(Date)+s(weekday,k=2),
+           family=Gamma(link=log),
+           data=Hospital_select_lm)
+summary(Hospital_gam_1)
+
+
+AIC(lmfit,Hospital_gam,Hospital_gam_1)
+
+```
+
+```{r}
+plot(Hospital_gam_1)
+```
+
+```{r}
+plot(Hospital_gam_1, residuals = TRUE)
+```
+
+
+
+#Task4: Calculating EHF
+
+
+#Making weather station data tidy
+```{r}
+#Removing un-necessary columns from weather data set
+#weather_st_data_raw
+#Filtering perth weather station
+weather_st_perth<-weather_st_data_raw %>% filter(STATION=="ASN00009021")
+weather_st_perth <- weather_st_perth[-c(3:5,7:20,22,24,26,28)]
+weather_st_perth<-transform(weather_st_perth,STATION=as.character(STATION),NAME=as.character(NAME), Date=as.Date (DATE),PRCP=as.double(PRCP),TAVG=as.double(TAVG),TMAX=as.double(TMAX),TMIN=as.double(TMIN))
+weather_st_perth <- weather_st_perth[-c(3)]
+#weather_st_data_tidy<-weather_st_data_raw %>%
+ # group_by(DATE) %>%
+  #summarise(Avg_Temperature_F=mean(TAVG,na.rm=TRUE),Avg_PRCP_mm=mean(PRCP,na.rm=TRUE),Max_Temp_F=mean(TMAX,na.rm=TRUE),Min_temp_F=mean(TMIN,na.rm=TRUE))
+#weather_st_data_tidy
+weather_st_perth
+```
+
+
+```{r}
+#Creating 3-day rolling average to create EHF
+
+weather_st_perth <- weather_st_perth %>% mutate(EHF= rollmeanr(weather_st_perth[,4],3,fill=0))
+weather_st_perth %>%
+  ggplot(aes(x=Date,y=EHF))+geom_point()+geom_smooth(method = lm)+ggtitle('EHF yearly plot')
+
+```
+
+
+```{r}
+#Merging EHF values with ED demand data and ploting data
+weather_st_perth_EHF<-weather_st_perth[,c(7,8)]
+
+setDT(weather_st_perth_EHF)
+setDT(Hospital_select)
+
+merge_data<-Hospital_select[weather_st_perth_EHF, on = c('Date')]
+```
+
+
+```{r}
+#Creating linear model with EHF values
+merge_data_lm<-merge_data%>% mutate(weekday=wday(merge_data$Date))
+merge_data_lm<-transform(merge_data_lm,Date=as.numeric(Date))
+
+merge_data_lm$EHF_c <- fahrenheit.to.celsius(merge_data_lm$EHF)
+#Replacing 0 with mean value
+merge_data_lm$EHF_c[1]<-mean(merge_data_lm$EHF_c)
+merge_data_lm$EHF_c[2]<-mean(merge_data_lm$EHF_c)
+merge_data_lm %>%
+  ggplot(aes(x=EHF_c,y=Attendance))+geom_point()+geom_smooth(method = lm)+ggtitle('Attendence Vs EHF_celsius')
+
+
+lmfit_3<-lm(Attendance~Date+weekday+EHF_c,data =merge_data_lm)
+lmfit_3%>%summary
+
+
+
+```
+
+```{r}
+#Linear model with EHF_c
+lmfit_4<-lm(Attendance~EHF_c,data =merge_data_lm)
+lmfit_4%>%summary
+
+```
+
+
+
+```{r}
+merge_data_lm %>%
+  ggplot(aes(x=EHF_c,y=Attendance))+geom_point()+geom_smooth(method = 'gam',formula=y~s(x))+ggtitle("ED Demands Vs EHF")
+```
+
+
+```{r}
+Hospital_gam_ehf <- gam(Attendance ~ s(EHF_c),
+           family=Gamma(link=log),
+           data=merge_data_lm)
+summary(Hospital_gam_ehf)
+
+
+```
+
+```{r}
+merge_data_lm %>%
+  ggplot(aes(x=Date,y=EHF_c))+geom_point()+geom_smooth(method = 'gam',formula=y~s(x))+ggtitle("GAM with EHF")
+```
+
+```{r}
+plot(Hospital_gam_ehf, residuals = TRUE)
+```
+
+```{r}
+Hospital_gam_ehf_1 <- gam(Attendance ~ s(Date)+s(weekday,k=2)+s(EHF_c,k=2),
+           family=Gamma(link=log),
+           data=merge_data_lm)
+summary(Hospital_gam_ehf_1)
+
+
+AIC(lmfit_3,lmfit_4, Hospital_gam_ehf,Hospital_gam_ehf_1)
+```
+#Extra weather features
+
+```{r}
+Hospital_select_weather<-Hospital_select[,c(1,3)]
+
+setDT(weather_st_perth)
+setDT(Hospital_select_weather)
+
+merge_data_1<-weather_st_perth[Hospital_select_weather, on = c('Date')]
+
+#merge_data_lm$EHF_c <- fahrenheit.to.celsius(merge_data_lm$EHF)
+
+merge_data_1$EHF_c <- fahrenheit.to.celsius(merge_data_1$EHF)
+merge_data_1$TVG_c <- fahrenheit.to.celsius(merge_data_1$TAVG)
+merge_data_1$TMAX_c <- fahrenheit.to.celsius(merge_data_1$TMAX)
+merge_data_1$TMIN_c <- fahrenheit.to.celsius(merge_data_1$TMIN)
+#Replace 0 values with mean values
+merge_data_1$EHF_c[1]<-mean(merge_data_1$EHF_c)
+merge_data_1$EHF_c[2]<-mean(merge_data_1$EHF_c)
+```
+
+
+```{r}
+merge_data_1 %>%
+  ggplot(aes(x=TVG_c,y=Attendance))+geom_point()+geom_smooth(method = lm)+ggtitle("Royal perth ED Demand Data")
+merge_data_1 %>%
+  ggplot(aes(x=PRCP,y=Attendance))+geom_point()+geom_smooth(method = lm)+ggtitle("Royal perth ED Demand Data")
+
+
+lmfit_5<-lm(Attendance~EHF+PRCP,data =merge_data_1)
+summary(lmfit_5)
+
+```
+
+
+```{r}
+lmfit_6<-lm(Attendance~EHF+PRCP+TVG_c+TMAX_c+TMIN_c,data =merge_data_1)
+summary(lmfit_6)
+
+
+```
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,5 @@
 #Assignment-2
-#Muhammad Kazim
-#218200403
+#Kazim Shah
 
 ########################################################
 #Question:1.7:

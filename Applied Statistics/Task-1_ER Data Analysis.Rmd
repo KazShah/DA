@@ -1,0 +1,303 @@
+---
+title: "Assignment_1"
+author: "Kazim shah"
+date: "8/7/2020"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(fitdistrplus)
+library(magrittr)
+```
+
+######kindly run all markdown cells.##########
+
+Section 1
+Q 1.1:Reading file as dataframe and displaying first few lines of the data set
+```{r}
+data <- read.csv(file = 'http://bit.ly/2nkCUEh')
+head(data)
+```
+
+Q 1.2.1: How many rows and columns in the data
+```{r}
+print(paste("Total number of rows: ",nrow(data)))
+print(paste("Total number of columns: ", ncol(data)))
+```
+
+Q 1.2:Counting number of hospitals in the dataset from the first row of the data
+```{r}
+header<-colnames(data)
+sum_header<-str_count(header,"X")
+print(paste("The total number of Hospitals in the data set are",sum(sum_header==0)))
+```
+
+Q 1.3: Checking data types of the data
+
+kindly run all modlues
+
+```{r}
+#Seperating first row of the data to use further in the code
+data_test<-'govhack3.csv'
+row_1 <- read_csv(data_test, col_names=FALSE, n_max = 1)
+list_of_hospitals<-c(row_1)
+list_of_hospitals<-list_of_hospitals[!is.na(list_of_hospitals)]
+```
+
+
+```{r}
+#Making 2nd row of the dataset the header
+row_2<-read_csv('govhack3.csv',skip=1)
+write.csv(row_2,'data_modified.csv')
+data_new<-read_csv('data_modified.csv')
+head(data_new)
+```
+
+
+```{r}
+#printing data types
+str(data_new)
+```
+
+Q 1.4: Checking Duration of time over which data is collected
+```{r}
+print(paste("The first entry recorded on",first(data_new$Date)))
+print(paste("The last entry recorded on",last(data_new$Date)))
+print(paste("So the total duration of the dataset is 1 year"))
+```
+
+Section 2
+
+Q2.1: Printing list of hospitals after cleaning up data
+
+```{r}
+new_hospital_df<-data.frame(list_of_hospitals)
+hospitals<-t(new_hospital_df)
+hospitals
+```
+
+```{r}
+conbo<-data.frame(data_new[2],h_1,h_2)
+h_1<-rep(hospitals[1,],365)
+h_2<-rep(hospitals[2,],365)
+h_3<-rep(hospitals[3,],365)
+h_4<-rep(hospitals[4,],365)
+h_5<-rep(hospitals[5,],365)
+h_6<-rep(hospitals[6,],365)
+h_7<-rep(hospitals[7,],365)
+h_8<-rep(hospitals[8,],365)
+h_9<-rep(hospitals[9,],365)
+
+h_combo<-data.frame(h_1,h_2,h_3,h_4,h_5,h_6,h_7,h_8,h_9)
+df2_hospitlas<-data.frame(Hospital=unlist(h_combo,use.names=FALSE))
+```
+
+
+
+Q 2.2 (a): Does each variable has its own column?
+No, as the data is gathered row wise with respect to date, variable names are same for each hospital so each variable is repeating itself for each hospital.
+(b) Does each observation has its own row?
+No, we can see that one observation is for one hospital, so observations for each hospital are in the same row.  
+(c) Does each value has its own cell?
+Yes.
+
+Q 2.3: Use Spreadin/gathering to make data tidy
+```{r}
+data_tidy_admission <- data_new %>% 
+  gather(key = "Admissions_new", 
+         value = "Admissions", 
+         starts_with("Admission"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_attendence <- data_new %>% 
+  gather(key = "Attendance_new", 
+         value = "Attendance", 
+         starts_with("Attendance"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_1 <- data_new %>% 
+  gather(key = "Triage_1", 
+         value = "Tri_1_cases", 
+         starts_with("Tri_1"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_2 <- data_new %>% 
+  gather(key = "Triage_2", 
+         value = "Tri_2_cases", 
+         starts_with("Tri_2"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_3 <- data_new %>% 
+  gather(key = "Triage_3", 
+         value = "Tri_3_cases", 
+         starts_with("Tri_3"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_4 <- data_new %>% 
+  gather(key = "Triage_4", 
+         value = "Tri_4_cases", 
+         starts_with("Tri_4"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_tidy_triage_5 <- data_new %>% 
+  gather(key = "Triage_5", 
+         value = "Tri_5_cases", 
+         starts_with("Tri_5"), 
+         na.rm = FALSE) %>% 
+  replace_na(list(cases = 0))
+
+data_modi_date<-data_tidy_admission["Date"]
+data_modi_atte<-data_tidy_attendence[c("Attendance")]
+data_modi_admi<-data_tidy_admission[c("Admissions")]
+data_modi_tria_1<-data_tidy_triage_1[c("Tri_1_cases")]
+data_modi_tria_2<-data_tidy_triage_2[c("Tri_2_cases")]
+data_modi_tria_3<-data_tidy_triage_3[c("Tri_3_cases")]
+data_modi_tria_4<-data_tidy_triage_4[c("Tri_4_cases")]
+data_modi_tria_5<-data_tidy_triage_5[c("Tri_5_cases")]
+data_new_tidy=data.frame(data_modi_date,df2_hospitlas,data_modi_atte,data_modi_admi,data_modi_tria_1,data_modi_tria_2,data_modi_tria_3,data_modi_tria_4,data_modi_tria_5)
+data_new_tidy
+```
+
+Q2-3: Variables Data types:
+
+```{r}
+data_new_tidy<-transform(data_new_tidy, Hospital=as.character(Hospital),Admissions=as.numeric(Admissions),Attendance=as.numeric(Attendance),Tri_1_cases=as.numeric(Tri_1_cases),Tri_2_cases=as.numeric(Tri_2_cases),Tri_3_cases=as.numeric(Tri_3_cases),Tri_5_cases=as.numeric(Tri_5_cases))
+
+#as.Date(data_new_tidy[1],"08/16/1975")
+
+#data_new_tidy[1]<-strptime(data_new_tidy[1],"%B, %d, %Y")
+
+str(data_new_tidy)
+
+```
+
+Q2-4: Remove N/A Values:
+
+```{r}
+data_new_tidy[is.na(data_new_tidy)] <- 0
+```
+
+Q-3.1: Select a Hospital:
+```{r}
+Hospital_select<-data_new_tidy %>% filter(Hospital=="Royal Perth Hospital") 
+print(paste("Hospital Name: ",unique(Hospital_select$Hospital)))
+print(paste("Total Number of People Attended ED in 1 year: ",sum(Hospital_select$Admissions)))
+print(paste("Total Number of people Admitted in ED in i year",sum(Hospital_select$Attendance)))
+```
+
+Q-3.2: Comparison of ED demands across the year
+
+```{r}
+Hospital_select$Week <- 1:nrow(Hospital_select) 
+Hospital_select$Week <- ceiling((Hospital_select$Week/7))
+#values = seq(from = as.Date("2013-07-01"), to = as.Date("2014-06-30"), by = 'day')
+#Hospital_select<-merge(Hospital_select, values, all = T)
+
+#Hospital_select <- Hospital_select[, c(10, 2, 3, 4, 5,6,7,8,9)]
+#Hospital_select<-Hospital_select %>% 
+ # rename(
+  #  Date = y
+   #   )
+
+#plot(Hospital_select$Week,Hospital_select$Attendance)
+#ggplot(Hospital_select, aes(Date, Attendance))+ geom_jitter()
+
+ggplot(Hospital_select, aes(x = Week, y = Attendance)) +geom_line() + geom_point()  +ggtitle("Average Hospital Attendence per week")+geom_vline(xintercept = 18, linetype="dotted",color = "blue", size=1.5)+geom_vline(xintercept = 39, linetype="dotted",color = "red", size=1.5) 
+
+
+
+#ggplot(Hospital_select, aes(x=Date, y=Attendance)) + geom_bar(stat="identity")
+
+
+
+```
+
+Q-3.3: How do the ED demands change during a week? Show it visually
+
+```{r}
+
+ggplot(Hospital_select, aes(x=Week, y=Attendance,group=Week)) + 
+  geom_boxplot()+ggtitle("Average Hospital Attendence per week")
+
+```
+
+Q-3.4: Possion Distribution of randomly 200 samples:
+
+```{r}
+
+#Running Cullen and Frey graph for distribution selection
+Hospital_select %$% 
+  descdist(Attendance, boot = 100)
+
+Hospital_select[sample(nrow(Hospital_select), 200),]
+
+
+#Pois_dis <- Hospital_select$Attendance 
+#fitp <- fitdist(Pois_dis,"pois")
+#summary(fitp)
+#plot(fitp)
+#fitnb <- fitdist(number,"nbinom")
+#summary(fitnb)
+#plot(fitnb)
+
+```
+
+
+Q 4-1: Fitting Distributions:
+```{r}
+Pois_dis_1 <- Hospital_select$Tri_2_cases 
+
+estimate <- Hospital_select %$%
+  fitdist(data = Tri_2_cases, 
+          distr = "pois")
+estimate %>% 
+  plot
+
+fitp_1 <- fitdist(Pois_dis_1,"pois")
+summary(fitp_1)
+plot(fitp_1)
+fitp_1 %>% 
+  plot
+fitnb <- fitdist(Pois_dis_1,"nbinom")
+summary(fitnb)
+plot(fitnb)
+fitnb %>% 
+  plot
+```
+
+Q 4-2 (a): Log-liklihood of two fitted distributions:
+```{r}
+Pois_ll<-logLik(fitp_1)
+nb_ll<-logLik(fitnb)
+ratio=Pois_ll/nb_ll
+ratio
+```
+
+Q-4-2(b): Which distribution fit the data better:
+Log likelihood ratio comes out to be 1.01425. This means that poison distribution model is 1.014 times more suitable against negative binomial distribution for projecting the data
+
+Q-5: Fitting Distributions:
+Mentions in report
+
+Q-6: Ethics:
+Mentions in report
+
+Q-7: Reflection:
+Mentions in report
+
+
+
+
+
+
+
+

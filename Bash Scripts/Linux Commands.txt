@@ -1,0 +1,73 @@
+Basic Linux Commands:
+
+Working Directory:
+1) pwd: present working directory
+2) cd .. : change directory to 01 previous directory. cd ../.. goes back 02 directories..cd ../../.. 3up. cd root/: used to access any folder.
+3) ls: list everything in the folder. ls/etc/
+4) ls -la: hidden folders
+5) echo "Hi!"> test.txt :Note: dquote> error comes when you have ! or missed double quotes to end..just press double quotes to come out.
+6) cp text.txt Downloads: will copy text.txt to downloads folder.
+7) mv text.txt Downloads: will cut and paste the file to downloads folders.
+8) passwd: change password
+9) man: man ls: gives the details of command.
+10) ls --help: also gives details of command.
+
+User Previlages:
+Premission setting:
+1) -rw: means its a file
+2) d: means its a directory
+3) rwx: read/write/execute
+4) drwxr-xr-x: rwxr means owner of the dir who got full access..xr: group that can only read and execute..x: group that can only execute
+5) ls -la /tmp/: shows us where we can dump files with full access
+6) chmod +rwx hello.txt: gives full access to user on a file...chmod 777 hello.txt
+7) adduser: adds new user..cat /etc/passwd: show user contents.. cat /etc/shadow: show password details
+8) su: switch user..sudo passwd root: will change the password for root if user is in sudoers file.
+
+Common Network Commands:
+1) ifconfig: ipaddress: Show IP configuration and settings like ip address/mak address
+2) iwconfig: for wirless LAN.
+3) ping. used for ping
+4) ARP: just a way to associate ip addresses with mak addresses.
+5) netstat -ano: shows active connections on the machine. Used in pen test to see if the machine is talking to somebody else. Show open ports.
+6) route:shows where traffic exits. shows if the machine is talking to another network.
+
+Viewing, Editing, Creating Files:
+
+1) Echo: used to create files: echo "Hello" > hey.txt. for appending files: echo "Hello again" >> hey.txt
+2) cat: cat hey.txt: prints out what is in the file.
+3)nano: Text editor. nano newfile.txt: used to create scripts.
+4)gedit nefile.txt: graphical interface text file.
+
+Starting and Stopping Kali services:
+
+1)Services:
+2)systemctl:
+3) sudo apt update: for updates followed by :sudo apt full-upgrade -y
+
+Bash Scripting:
+1)grep: only pulls up specified text. ping 192.168.19.222 -c 1>ip.txt: will send only 01 packet of data. save it as text file. cat ip.txt | grep "64 bytes": this will only
+retrun 64 bytes response. cat ip.txt | grep | cut -d " " -f 4: this will cut only the ip address
+ cat ip.txt | grep "64 bytes" | cut -d " " -f 4 | tr -d ":" : this will remove the : in the end of ip address.
+
+Script for sweeping ip from 1-->254
+! /bin/bash
+if [ "$1" == "" ]
+then
+echo "Syntax Error"
+else
+for ip in $(seq 1 254); do
+ping -c 1 $1.$ip | grep "64 bytes" | cut -d " " -f 4 | tr -d ":" &
+done
+fi
+
+nmap:
+
+for ip $(cat iplist.txt); do nmap -sS -p 80 -T4 $ip & done  
+
+
+
+
+
+
+
+
